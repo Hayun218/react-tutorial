@@ -5,7 +5,6 @@
 import { useState } from "react";
 
 function Square({value, onSquareClick}) {
-
     return (
       <button className="square" onClick={onSquareClick}>
         {value}
@@ -14,11 +13,11 @@ function Square({value, onSquareClick}) {
   }
   
 function Board({ xIsNext, squares, onPlay }) {
-
   function handleClick(i) {
     if(squares[i] || calculateWinner(squares)) {
       return;
     }
+    // 어레이 복사해서 새로 생성
     const nextSquares = squares.slice();
     if (xIsNext) {
       nextSquares[i] = 'X';
@@ -34,6 +33,26 @@ function Board({ xIsNext, squares, onPlay }) {
     status = "Winner: " + winner;
   } else {
     status = "Next player: " + (xIsNext ? "X" : "O");
+  }
+
+  function renderSquare(i) {
+    return (
+      <Square value={squares[i]} onSquareClick={() => handleClick(i)} />
+    );
+  }
+
+  const board = [];
+
+  for(let row = 0; row < 3; row++) {
+    const rowSquares = [];
+    for(let col = 0; col < 3; col++) {
+      rowSquares.push(renderSquare(row * 3 + col));
+    }
+    board.push(
+      <div key={row} className="board-row">
+        {rowSquares}
+      </div>
+    );
   }
 
   return (
@@ -82,6 +101,7 @@ function calculateWinner(squares) {
 export default function Game() {
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
+  const [isAscending, setIsAscending] = useState(true);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
 
@@ -95,19 +115,31 @@ export default function Game() {
     setCurrentMove(nextMove);
   }
 
+  function toggleSortOrder() {
+    setIsAscending(!isAscending);
+  }
+
   const moves = history.map((squares, move) => {
     let description;
-    if(move > 0) {
+    if (move === currentMove) {
+      description = `You are at move #${move}`;
+    } else if(move > 0) {
       description = 'Go to move #' + move;
     } else {
       description = 'Go to game start';
     }
     return (
       <li key={move}>
-        <button onClick={() => jumpTo(move)}>{description}</button>
+        {move === currentMove ? (
+          <span>{description}</span>
+        ) : (
+          <button onClick={() => jumpTo(move)}>{description}</button>
+        )}
       </li>
     );
   }); 
+
+  const sortedMoves = isAscending ? moves : moves.slice().reverse();
 
 
   return (
@@ -116,7 +148,10 @@ export default function Game() {
         <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
       </div>
       <div className="game-info">
-        <ol>{moves}</ol>
+        <button onClick={toggleSortOrder}>
+          {isAscending ? "Sort Descending" : "Sort Ascending"}
+        </button>
+        <ol>{sortedMoves}</ol>
       </div>
     </div>
   )
